@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Test Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        #score {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+        }
+
+        .cell {
+            background-color: #ffffff;
+            border: 2px solid #cccccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            cursor: pointer;
+            -webkit-user-select: none; /* Added for Safari compatibility */
+            user-select: none; /* Prevents text selection */
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        .cell:active {
+            background-color: #ddd;
+            transform: scale(0.95);
+        }
+
+        #controls {
+            margin-top: 20px;
+        }
+
+        #startButton, #restartButton {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 1.2em;
+            height: 1.5em;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Memory Test Game</h1>
+    <div id="score">Score: 0</div>
+    <div class="grid">
+        <div class="cell" data-number="1">1</div>
+        <div class="cell" data-number="2">2</div>
+        <div class="cell" data-number="3">3</div>
+        <div class="cell" data-number="4">4</div>
+        <div class="cell" data-number="5">5</div>
+        <div class="cell" data-number="6">6</div>
+        <div class="cell" data-number="7">7</div>
+        <div class="cell" data-number="8">8</div>
+        <div class="cell" data-number="9">9</div>
+    </div>
+    <div id="controls">
+        <button id="startButton">Start Game</button>
+        <button id="restartButton" style="display: none;">Restart Game</button>
+    </div>
+    <div id="message"></div>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const scoreDisplay = document.getElementById('score');
+        const message = document.getElementById('message');
+
+        let sequence = [];
+        let userSequence = [];
+        let score = 0;
+        let acceptingInput = false;
+
+        // Function to generate a random number between 1 and 9
+        function getRandomNumber() {
+            return Math.floor(Math.random() * 9) + 1;
+        }
+
+        // Function to add a new number to the sequence
+        function addToSequence() {
+            sequence.push(getRandomNumber());
+        }
+
+        // Function to display the sequence to the user
+        async function displaySequence() {
+            acceptingInput = false;
+            message.textContent = "Watch the sequence!";
+            for (let num of sequence) {
+                await highlightCell(num);
+                await delay(600);
+            }
+            message.textContent = "Your turn!";
+            acceptingInput = true;
+            userSequence = [];
+        }
+
+        // Function to highlight a cell
+        function highlightCell(number) {
+            return new Promise((resolve) => {
+                const cell = document.querySelector(`.cell[data-number='${number}']`);
+                cell.style.backgroundColor = '#a0e7e5';
+                setTimeout(() => {
+                    cell.style.backgroundColor = '#ffffff';
+                    resolve();
+                }, 500);
+            });
+        }
+
+        // Function to create a delay
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Function to start the game
+        async function startGame() {
+            startButton.style.display = 'none';
+            restartButton.style.display = 'none';
+            sequence = [];
+            userSequence = [];
+            score = 0;
+            updateScore();
+            addToSequence();
+            await displaySequence();
+        }
+
+        // Function to restart the game
+        function restartGame() {
+            sequence = [];
+            userSequence = [];
+            score = 0;
+            updateScore();
+            message.textContent = "";
+            restartButton.style.display = 'none';
+            startButton.style.display = 'inline-block';
+        }
+
+        // Function to update the score display
+        function updateScore() {
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+
+        // Function to handle user input
+        function handleUserInput(number) {
+            if (!acceptingInput) return;
+            userSequence.push(number);
+            highlightCell(number);
+            const currentStep = userSequence.length - 1;
+            if (number !== sequence[currentStep]) {
+                endGame();
+                return;
+            }
+            if (userSequence.length === sequence.length) {
+                score++;
+                updateScore();
+                addToSequence();
+                acceptingInput = false;
+                setTimeout(displaySequence, 1000);
+            }
+        }
+
+        // Function to end the game
+        function endGame() {
+            acceptingInput = false;
+            message.textContent = `Game Over! Your final score is ${score}.`;
+            restartButton.style.display = 'inline-block';
+        }
+
+        // Add event listeners to cells
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => {
+                const number = parseInt(cell.getAttribute('data-number'));
+                handleUserInput(number);
+            });
+        });
+
+        // Add event listeners to buttons
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', restartGame);
+    </script>
+
+</body>
+</html>
